@@ -16,3 +16,4 @@ urllib3==2.5.0
 
 gunicorn==22.0.0
 
+dj-database-url==2.3.0

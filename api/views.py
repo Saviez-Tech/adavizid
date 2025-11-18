@@ -51,26 +51,33 @@ def vip_confirm(request, token):
 
 @api_view(['POST'])
 def upload_media(request):
-    file = request.FILES.get('file')
+    file = request.FILES.getlist('file')   # <-- use getlist for multiple files
+    print("FILES:", request.FILES)
 
     if not file:
-        return Response({"error": "rsvp and file are required"}, status=400)
+        return Response({"error": "No files uploaded"}, status=400)
 
-    # Upload to Cloudinary
-    upload_result = cloudinary.uploader.upload(
-        file,
-        resource_type="auto"   # handles both video & image
-    )
+    uploaded_items = []
 
-    media_type = "video" if upload_result.get("resource_type") == "video" else "image"
+    for file in file:
+        # Upload to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file,
+            resource_type="auto"
+        )
 
-    media = WeddingMedia.objects.create(
-        media_type=media_type,
-        media_url=upload_result["secure_url"]
-    )
+        media_type = "video" if upload_result.get("resource_type") == "video" else "image"
 
-    serializer = WeddingMediaSerializer(media)
-    return Response(serializer.data)
+        media = WeddingMedia.objects.create(
+            media_type=media_type,
+            media_url=upload_result["secure_url"]
+        )
+
+        uploaded_items.append(media)
+
+    # Serialize all created items
+    serializer = WeddingMediaSerializer(uploaded_items, many=True)
+    return Response(serializer.data, status=201)
 
 
 
